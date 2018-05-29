@@ -1,27 +1,42 @@
 // Modules to control application life and create native browser window
-const {app, BrowserWindow} = require('electron')
+const {app, BrowserWindow, Tray, Menu} = require('electron')
+const path = require('path');
+const Observable = require('rxjs');
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 let mainWindow
 
+const iconPath = path.join(__dirname, 'clock2.png');
+
+
 function createWindow () {
   // Create the browser window.
-  mainWindow = new BrowserWindow({width: 800, height: 600})
+  mainWindow = new BrowserWindow({show: false})
+  var tray = new Tray(iconPath);
+  tray.setTitle("Worktime: 00:00");
+  
+  var start = new Date(Date.now());
+  var startMsec = start.getTime();  
 
-  // and load the index.html of the app.
-  mainWindow.loadFile('index.html')
+  this.sub = Observable.interval(10000)
+    .subscribe((val) => { 
+      var elapsed = (new Date(Date.now()).getTime() - startMsec);  
+      tray.setTitle("Worktime: " + msToTime(elapsed));
+    });
+}
 
-  // Open the DevTools.
-  // mainWindow.webContents.openDevTools()
+function msToTime(duration) {
+  var milliseconds = parseInt((duration%1000)/100)
+      , seconds = parseInt((duration/1000)%60)
+      , minutes = parseInt((duration/(1000*60))%60)
+      , hours = parseInt((duration/(1000*60*60))%24);
 
-  // Emitted when the window is closed.
-  mainWindow.on('closed', function () {
-    // Dereference the window object, usually you would store windows
-    // in an array if your app supports multi windows, this is the time
-    // when you should delete the corresponding element.
-    mainWindow = null
-  })
+  hours = (hours < 10) ? "0" + hours : hours;
+  minutes = (minutes < 10) ? "0" + minutes : minutes;
+  seconds = (seconds < 10) ? "0" + seconds : seconds;
+
+  return hours + ":" + minutes + ":" + seconds;
 }
 
 // This method will be called when Electron has finished
